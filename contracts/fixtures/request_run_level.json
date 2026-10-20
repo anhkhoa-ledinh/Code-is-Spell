@@ -1,0 +1,8 @@
+{
+  "id": 2,
+  "method": "run_level",
+  "params": {
+    "level_id": "xa_ngu/f1",
+    "code": "move(EAST)\nlight()\nmove(EAST)\nlight()\nmove(EAST)\nlight()\n"
+  }
+}

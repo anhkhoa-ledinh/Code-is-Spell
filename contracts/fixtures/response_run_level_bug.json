@@ -1,0 +1,69 @@
+{
+  "id": 3,
+  "result": {
+    "status": "failed",
+    "seed": 0,
+    "world": {
+      "kind": "grid",
+      "width": 5,
+      "height": 1,
+      "golem": [
+        0,
+        0
+      ],
+      "lanterns": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          0
+        ]
+      ]
+    },
+    "checks": [
+      {
+        "id": "all_lit",
+        "passed": false,
+        "message": "Đã thắp 0/3 đèn"
+      },
+      {
+        "id": "no_backfire",
+        "passed": false,
+        "message": "Phản phệ ở dòng 1: GolemHitWall"
+      }
+    ],
+    "events": [
+      {
+        "t": 1,
+        "type": "bug",
+        "line": 1,
+        "school": "bug",
+        "exc": "GolemHitWall",
+        "message": "Golem đâm vào tường khi đi về WEST từ (0, 0)",
+        "traceback": "Traceback (most recent call last):\n  File \"<spell>\", line 1, in <module>\nGolemHitWall: Golem đâm vào tường khi đi về WEST từ (0, 0)"
+      }
+    ],
+    "mana": {
+      "total": 2,
+      "by_school": {
+        "xa_ngu": 2
+      }
+    },
+    "metrics": {
+      "lines": 7,
+      "ticks": 1,
+      "shots": 0,
+      "executions": 0,
+      "depth": 0,
+      "gates": 0
+    },
+    "stars": 0,
+    "stdout": ""
+  }
+}

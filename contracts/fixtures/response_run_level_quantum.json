@@ -1,0 +1,140 @@
+{
+  "id": 5,
+  "result": {
+    "status": "passed",
+    "seed": 0,
+    "world": {
+      "kind": "altar",
+      "wires": 2,
+      "noise": null
+    },
+    "checks": [
+      {
+        "id": "observed",
+        "passed": true,
+        "message": "Đã khai nhãn 100 lần"
+      },
+      {
+        "id": "agreement",
+        "passed": true,
+        "message": "Hai linh cầu trùng kết quả 100% số lần"
+      },
+      {
+        "id": "random_0",
+        "passed": true,
+        "message": "Linh cầu 0 ra 1 ở 47% số lần"
+      },
+      {
+        "id": "random_1",
+        "passed": true,
+        "message": "Linh cầu 1 ra 1 ở 47% số lần"
+      },
+      {
+        "id": "no_backfire",
+        "passed": true,
+        "message": "Không có phản phệ"
+      }
+    ],
+    "events": [
+      {
+        "t": 9,
+        "type": "gate",
+        "line": null,
+        "school": "luong_tu",
+        "name": "Hadamard",
+        "wires": [
+          0
+        ],
+        "params": []
+      },
+      {
+        "t": 9,
+        "type": "orb",
+        "line": null,
+        "school": "luong_tu",
+        "wire": 0,
+        "bloch": [
+          1.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "t": 9,
+        "type": "orb",
+        "line": null,
+        "school": "luong_tu",
+        "wire": 1,
+        "bloch": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      {
+        "t": 9,
+        "type": "gate",
+        "line": null,
+        "school": "luong_tu",
+        "name": "CNOT",
+        "wires": [
+          0,
+          1
+        ],
+        "params": []
+      },
+      {
+        "t": 9,
+        "type": "orb",
+        "line": null,
+        "school": "luong_tu",
+        "wire": 0,
+        "bloch": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "t": 9,
+        "type": "orb",
+        "line": null,
+        "school": "luong_tu",
+        "wire": 1,
+        "bloch": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "t": 9,
+        "type": "measure",
+        "line": null,
+        "school": "luong_tu",
+        "shots": 100,
+        "counts": {
+          "00": 53,
+          "11": 47
+        }
+      }
+    ],
+    "mana": {
+      "total": 309,
+      "by_school": {
+        "xa_ngu": 9,
+        "luong_tu": 300
+      }
+    },
+    "metrics": {
+      "lines": 8,
+      "ticks": 9,
+      "shots": 100,
+      "executions": 1,
+      "depth": 2,
+      "gates": 2
+    },
+    "stars": 3,
+    "stdout": ""
+  }
+}

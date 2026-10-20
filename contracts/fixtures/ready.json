@@ -1,0 +1,9 @@
+{
+  "method": "ready",
+  "params": {
+    "protocol": 1,
+    "kernel_version": "0.1.0",
+    "python": "3.12.7",
+    "pennylane": "0.45.0"
+  }
+}

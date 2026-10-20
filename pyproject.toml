@@ -1,0 +1,25 @@
+[project]
+name = "ma-thuat"
+version = "0.1.0"
+description = "Kernel Python của Mã Thuật: chạy và chấm câu chú của người chơi."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = ["pennylane>=0.45,<0.46"]
+
+[dependency-groups]
+dev = ["pytest", "ruff", "jsonschema"]
+
+[build-system]
+requires = ["uv_build>=0.13,<0.14"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "ma_thuat"
+module-root = "kernel"
+
+[tool.pytest.ini_options]
+testpaths = ["kernel/tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

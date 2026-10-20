@@ -1,0 +1,350 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ma-thuat.local/contracts/protocol.schema.json",
+  "title": "Mã Thuật kernel protocol v1",
+  "description": "One JSON object per line (JSON Lines, UTF-8) between the Godot client and the Python kernel. Godot sends requests; the kernel sends responses with the same id, plus the 'ready' notification once at startup. Source of truth: change this file, contracts/fixtures/, kernel/ma_thuat/server.py and game/scripts/protocol.gd in the same commit.",
+  "oneOf": [
+    { "$ref": "#/$defs/request" },
+    { "$ref": "#/$defs/response_ok" },
+    { "$ref": "#/$defs/response_error" },
+    { "$ref": "#/$defs/notification_ready" }
+  ],
+  "$defs": {
+    "school": { "enum": ["xa_ngu", "ma_tran", "luong_tu", "gia_kim", "bug"] },
+    "tower": { "enum": ["xa_ngu", "luong_tu"] },
+    "level_id": { "type": "string", "pattern": "^[a-z_]+/[a-z0-9_]+$" },
+    "tick": { "type": "integer", "minimum": 0 },
+    "line": { "type": ["integer", "null"], "minimum": 1 },
+    "pos": {
+      "type": "array",
+      "items": { "type": "integer" },
+      "minItems": 2,
+      "maxItems": 2
+    },
+
+    "request": {
+      "type": "object",
+      "required": ["id", "method", "params"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "method": { "enum": ["ping", "list_levels", "run_level", "shutdown"] },
+        "params": { "type": "object" }
+      },
+      "if": { "properties": { "method": { "const": "run_level" } } },
+      "then": { "properties": { "params": { "$ref": "#/$defs/run_level_params" } } },
+      "else": { "properties": { "params": { "maxProperties": 0 } } }
+    },
+    "run_level_params": {
+      "type": "object",
+      "required": ["level_id", "code"],
+      "additionalProperties": false,
+      "properties": {
+        "level_id": { "$ref": "#/$defs/level_id" },
+        "code": { "type": "string", "maxLength": 20000 }
+      }
+    },
+
+    "notification_ready": {
+      "type": "object",
+      "required": ["method", "params"],
+      "additionalProperties": false,
+      "properties": {
+        "method": { "const": "ready" },
+        "params": {
+          "type": "object",
+          "required": ["protocol", "kernel_version", "python", "pennylane"],
+          "additionalProperties": false,
+          "properties": {
+            "protocol": { "const": 1 },
+            "kernel_version": { "type": "string" },
+            "python": { "type": "string" },
+            "pennylane": { "type": ["string", "null"] }
+          }
+        }
+      }
+    },
+
+    "response_error": {
+      "type": "object",
+      "required": ["id", "error"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": ["integer", "null"], "minimum": 1 },
+        "error": {
+          "type": "object",
+          "required": ["code", "message"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "enum": ["unknown_method", "unknown_level", "bad_params", "internal"] },
+            "message": { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "response_ok": {
+      "type": "object",
+      "required": ["id", "result"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "result": {
+          "oneOf": [
+            { "$ref": "#/$defs/result_pong" },
+            { "$ref": "#/$defs/result_ok" },
+            { "$ref": "#/$defs/result_level_list" },
+            { "$ref": "#/$defs/run_result" }
+          ]
+        }
+      }
+    },
+    "result_pong": {
+      "type": "object",
+      "required": ["pong"],
+      "additionalProperties": false,
+      "properties": { "pong": { "const": true } }
+    },
+    "result_ok": {
+      "type": "object",
+      "required": ["ok"],
+      "additionalProperties": false,
+      "properties": { "ok": { "const": true } }
+    },
+    "result_level_list": {
+      "type": "object",
+      "required": ["levels"],
+      "additionalProperties": false,
+      "properties": {
+        "levels": { "type": "array", "items": { "$ref": "#/$defs/level_meta" } }
+      }
+    },
+
+    "star_rule": {
+      "type": "object",
+      "required": ["metric", "three", "two"],
+      "additionalProperties": false,
+      "properties": {
+        "metric": { "enum": ["mana", "gates", "lines"] },
+        "three": { "type": "integer", "minimum": 0 },
+        "two": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "level_meta": {
+      "type": "object",
+      "required": [
+        "id", "tower", "order", "title", "brief", "concept", "starter_code",
+        "features", "imports", "max_lines", "stars", "preview"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/level_id" },
+        "tower": { "$ref": "#/$defs/tower" },
+        "order": { "type": "integer", "minimum": 1 },
+        "title": { "type": "string" },
+        "brief": { "type": "string" },
+        "concept": { "type": "string" },
+        "starter_code": { "type": "string" },
+        "features": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "imports": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "max_lines": { "type": ["integer", "null"], "minimum": 1 },
+        "stars": { "$ref": "#/$defs/star_rule" },
+        "preview": { "$ref": "#/$defs/world" }
+      }
+    },
+
+    "world": {
+      "oneOf": [
+        { "$ref": "#/$defs/world_grid" },
+        { "$ref": "#/$defs/world_altar" }
+      ]
+    },
+    "world_grid": {
+      "type": "object",
+      "required": ["kind", "width", "height", "golem", "lanterns"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "grid" },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "golem": { "$ref": "#/$defs/pos" },
+        "lanterns": { "type": "array", "items": { "$ref": "#/$defs/pos" } }
+      }
+    },
+    "world_altar": {
+      "type": "object",
+      "required": ["kind", "wires", "noise"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "altar" },
+        "wires": { "type": "integer", "minimum": 1, "maximum": 8 },
+        "noise": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+      }
+    },
+
+    "check": {
+      "type": "object",
+      "required": ["id", "passed", "message"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+        "passed": { "type": "boolean" },
+        "message": { "type": "string" }
+      }
+    },
+    "mana": {
+      "type": "object",
+      "required": ["total", "by_school"],
+      "additionalProperties": false,
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "by_school": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/school" },
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "required": ["lines", "ticks", "shots", "executions", "depth", "gates"],
+      "additionalProperties": false,
+      "properties": {
+        "lines": { "type": "integer", "minimum": 0 },
+        "ticks": { "type": "integer", "minimum": 0 },
+        "shots": { "type": "integer", "minimum": 0 },
+        "executions": { "type": "integer", "minimum": 0 },
+        "depth": { "type": "integer", "minimum": 0 },
+        "gates": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "run_result": {
+      "type": "object",
+      "required": ["status", "seed", "world", "checks", "events", "mana", "metrics", "stars", "stdout"],
+      "additionalProperties": false,
+      "properties": {
+        "status": { "enum": ["passed", "failed", "rejected", "error"] },
+        "seed": { "type": "integer" },
+        "world": { "$ref": "#/$defs/world" },
+        "checks": { "type": "array", "items": { "$ref": "#/$defs/check" } },
+        "events": { "type": "array", "items": { "$ref": "#/$defs/event" } },
+        "mana": { "$ref": "#/$defs/mana" },
+        "metrics": { "$ref": "#/$defs/metrics" },
+        "stars": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "stdout": { "type": "string" }
+      }
+    },
+
+    "event": {
+      "oneOf": [
+        { "$ref": "#/$defs/event_move" },
+        { "$ref": "#/$defs/event_light" },
+        { "$ref": "#/$defs/event_log" },
+        { "$ref": "#/$defs/event_bug" },
+        { "$ref": "#/$defs/event_gate" },
+        { "$ref": "#/$defs/event_orb" },
+        { "$ref": "#/$defs/event_measure" }
+      ]
+    },
+    "event_move": {
+      "type": "object",
+      "required": ["t", "type", "line", "school", "from", "to"],
+      "additionalProperties": false,
+      "properties": {
+        "t": { "$ref": "#/$defs/tick" },
+        "type": { "const": "move" },
+        "line": { "$ref": "#/$defs/line" },
+        "school": { "const": "xa_ngu" },
+        "from": { "$ref": "#/$defs/pos" },
+        "to": { "$ref": "#/$defs/pos" }
+      }
+    },
+    "event_light": {
+      "type": "object",
+      "required": ["t", "type", "line", "school", "pos"],
+      "additionalProperties": false,
+      "properties": {
+        "t": { "$ref": "#/$defs/tick" },
+        "type": { "const": "light" },
+        "line": { "$ref": "#/$defs/line" },
+        "school": { "const": "xa_ngu" },
+        "pos": { "$ref": "#/$defs/pos" }
+      }
+    },
+    "event_log": {
+      "type": "object",
+      "required": ["t", "type", "line", "school", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "t": { "$ref": "#/$defs/tick" },
+        "type": { "const": "log" },
+        "line": { "$ref": "#/$defs/line" },
+        "school": { "const": "xa_ngu" },
+        "text": { "type": "string" }
+      }
+    },
+    "event_bug": {
+      "type": "object",
+      "required": ["t", "type", "line", "school", "exc", "message", "traceback"],
+      "additionalProperties": false,
+      "properties": {
+        "t": { "$ref": "#/$defs/tick" },
+        "type": { "const": "bug" },
+        "line": { "$ref": "#/$defs/line" },
+        "school": { "const": "bug" },
+        "exc": { "type": "string" },
+        "message": { "type": "string" },
+        "traceback": { "type": "string" }
+      }
+    },
+    "event_gate": {
+      "type": "object",
+      "required": ["t", "type", "line", "school", "name", "wires", "params"],
+      "additionalProperties": false,
+      "properties": {
+        "t": { "$ref": "#/$defs/tick" },
+        "type": { "const": "gate" },
+        "line": { "$ref": "#/$defs/line" },
+        "school": { "const": "luong_tu" },
+        "name": { "type": "string" },
+        "wires": { "type": "array", "items": { "type": "integer", "minimum": 0 }, "minItems": 1 },
+        "params": { "type": "array", "items": { "type": "number" } }
+      }
+    },
+    "event_orb": {
+      "type": "object",
+      "required": ["t", "type", "line", "school", "wire", "bloch"],
+      "additionalProperties": false,
+      "properties": {
+        "t": { "$ref": "#/$defs/tick" },
+        "type": { "const": "orb" },
+        "line": { "$ref": "#/$defs/line" },
+        "school": { "const": "luong_tu" },
+        "wire": { "type": "integer", "minimum": 0 },
+        "bloch": {
+          "type": "array",
+          "items": { "type": "number", "minimum": -1, "maximum": 1 },
+          "minItems": 3,
+          "maxItems": 3
+        }
+      }
+    },
+    "event_measure": {
+      "type": "object",
+      "required": ["t", "type", "line", "school", "shots", "counts"],
+      "additionalProperties": false,
+      "properties": {
+        "t": { "$ref": "#/$defs/tick" },
+        "type": { "const": "measure" },
+        "line": { "$ref": "#/$defs/line" },
+        "school": { "const": "luong_tu" },
+        "shots": { "type": "integer", "minimum": 1 },
+        "counts": {
+          "type": "object",
+          "propertyNames": { "pattern": "^[01]+$" },
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        }
+      }
+    }
+  }
+}

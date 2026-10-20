@@ -1,0 +1,57 @@
+{
+  "id": 4,
+  "result": {
+    "status": "rejected",
+    "seed": 0,
+    "world": {
+      "kind": "grid",
+      "width": 5,
+      "height": 1,
+      "golem": [
+        0,
+        0
+      ],
+      "lanterns": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          0
+        ]
+      ]
+    },
+    "checks": [
+      {
+        "id": "syntax",
+        "passed": true,
+        "message": "Cú pháp hợp lệ"
+      },
+      {
+        "id": "features",
+        "passed": false,
+        "message": "Dòng 1: tầng này chưa dạy vòng lặp"
+      }
+    ],
+    "events": [],
+    "mana": {
+      "total": 0,
+      "by_school": {}
+    },
+    "metrics": {
+      "lines": 3,
+      "ticks": 0,
+      "shots": 0,
+      "executions": 0,
+      "depth": 0,
+      "gates": 0
+    },
+    "stars": 0,
+    "stdout": ""
+  }
+}

@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.godot/
+
+CLAUDE.md
+KICKOFF.md
+
+.claude/
+docs/
+
+

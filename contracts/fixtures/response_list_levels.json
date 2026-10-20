@@ -1,0 +1,77 @@
+{
+  "id": 6,
+  "result": {
+    "levels": [
+      {
+        "id": "xa_ngu/f1",
+        "tower": "xa_ngu",
+        "order": 1,
+        "title": "Thắp đèn hành lang",
+        "brief": "Hành lang tầng một tối om. Golem của bạn đứng ở ô đầu, ba ngọn đèn chờ phía trước. Niệm câu chú để golem thắp cả ba.",
+        "concept": "Lời gọi hàm và trình tự",
+        "starter_code": "# Golem đứng ở ô (0, 0). Đèn ở các ô 1, 2, 3 về phía EAST.\n",
+        "features": [],
+        "imports": [],
+        "max_lines": null,
+        "stars": {
+          "metric": "mana",
+          "three": 12,
+          "two": 18
+        },
+        "preview": {
+          "kind": "grid",
+          "width": 5,
+          "height": 1,
+          "golem": [
+            0,
+            0
+          ],
+          "lanterns": [
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ],
+            [
+              3,
+              0
+            ]
+          ]
+        }
+      },
+      {
+        "id": "luong_tu/q1",
+        "tower": "luong_tu",
+        "order": 1,
+        "title": "Ấn đảo và ấn phân thân",
+        "brief": "Bàn thờ có hai linh cầu đang ngủ ở |0⟩. Hãy lật linh cầu 0 sang |1⟩ và đặt linh cầu 1 vào thế chồng chập |+⟩.",
+        "concept": "Cổng X, H; trạng thái lượng tử và quả cầu Bloch",
+        "starter_code": "import pennylane as qp\n\ndev = tower.device(wires=2)\n\n# Viết một QNode rồi submit(...) nó.\n",
+        "features": [
+          "assign",
+          "data",
+          "functions",
+          "imports"
+        ],
+        "imports": [
+          "math",
+          "pennylane"
+        ],
+        "max_lines": null,
+        "stars": {
+          "metric": "gates",
+          "three": 2,
+          "two": 3
+        },
+        "preview": {
+          "kind": "altar",
+          "wires": 2,
+          "noise": null
+        }
+      }
+    ]
+  }
+}

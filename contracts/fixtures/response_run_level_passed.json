@@ -1,0 +1,132 @@
+{
+  "id": 2,
+  "result": {
+    "status": "passed",
+    "seed": 0,
+    "world": {
+      "kind": "grid",
+      "width": 5,
+      "height": 1,
+      "golem": [
+        0,
+        0
+      ],
+      "lanterns": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          0
+        ]
+      ]
+    },
+    "checks": [
+      {
+        "id": "all_lit",
+        "passed": true,
+        "message": "Đã thắp 3/3 đèn"
+      },
+      {
+        "id": "no_backfire",
+        "passed": true,
+        "message": "Không có phản phệ"
+      }
+    ],
+    "events": [
+      {
+        "t": 1,
+        "type": "move",
+        "line": 1,
+        "school": "xa_ngu",
+        "from": [
+          0,
+          0
+        ],
+        "to": [
+          1,
+          0
+        ]
+      },
+      {
+        "t": 2,
+        "type": "light",
+        "line": 2,
+        "school": "xa_ngu",
+        "pos": [
+          1,
+          0
+        ]
+      },
+      {
+        "t": 3,
+        "type": "move",
+        "line": 3,
+        "school": "xa_ngu",
+        "from": [
+          1,
+          0
+        ],
+        "to": [
+          2,
+          0
+        ]
+      },
+      {
+        "t": 4,
+        "type": "light",
+        "line": 4,
+        "school": "xa_ngu",
+        "pos": [
+          2,
+          0
+        ]
+      },
+      {
+        "t": 5,
+        "type": "move",
+        "line": 5,
+        "school": "xa_ngu",
+        "from": [
+          2,
+          0
+        ],
+        "to": [
+          3,
+          0
+        ]
+      },
+      {
+        "t": 6,
+        "type": "light",
+        "line": 6,
+        "school": "xa_ngu",
+        "pos": [
+          3,
+          0
+        ]
+      }
+    ],
+    "mana": {
+      "total": 12,
+      "by_school": {
+        "xa_ngu": 12
+      }
+    },
+    "metrics": {
+      "lines": 6,
+      "ticks": 6,
+      "shots": 0,
+      "executions": 0,
+      "depth": 0,
+      "gates": 0
+    },
+    "stars": 3,
+    "stdout": ""
+  }
+}
