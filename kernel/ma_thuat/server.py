@@ -3,13 +3,34 @@
 import json
 import logging
 from collections.abc import Callable, Iterable
+from types import ModuleType
 from typing import Any
 
-from ma_thuat import protocol
+from ma_thuat import judge, protocol
+from ma_thuat.levels import registry
 
 log = logging.getLogger(__name__)
 
 Handler = Callable[[dict[str, Any]], dict[str, Any]]
+MAX_CODE_LENGTH = 20_000
+
+# id màn → module màn. Nạp bằng load() sau khi protocol.install() (kernel/__main__.py) để print
+# lạc lúc import thư viện của màn cũng sang stderr.
+LEVELS: dict[str, ModuleType] = {}
+
+
+class ProtocolError(Exception):
+    """Lỗi do request, trả về cho Godot với mã lỗi của giao thức."""
+
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+        self.message = message
+
+
+def load() -> None:
+    LEVELS.clear()
+    LEVELS.update(registry.load_levels())
 
 
 def _ping(params: dict[str, Any]) -> dict[str, Any]:
@@ -20,7 +41,29 @@ def _shutdown(params: dict[str, Any]) -> dict[str, Any]:
     return {"ok": True}
 
 
-HANDLERS: dict[str, Handler] = {"ping": _ping, "shutdown": _shutdown}
+def _list_levels(params: dict[str, Any]) -> dict[str, Any]:
+    return {"levels": [registry.level_meta(level) for level in registry.sorted_levels(LEVELS)]}
+
+
+def _run_level(params: dict[str, Any]) -> dict[str, Any]:
+    level_id = params.get("level_id")
+    code = params.get("code")
+    if not isinstance(level_id, str) or not isinstance(code, str):
+        raise ProtocolError("bad_params", "run_level cần 'level_id' và 'code' là chuỗi")
+    if len(code) > MAX_CODE_LENGTH:
+        raise ProtocolError("bad_params", f"Câu chú dài quá {MAX_CODE_LENGTH} ký tự")
+    module = LEVELS.get(level_id)
+    if module is None:
+        raise ProtocolError("unknown_level", f"Không có tầng '{level_id}'")
+    return judge.run_level(module.LEVEL, code)
+
+
+HANDLERS: dict[str, Handler] = {
+    "ping": _ping,
+    "list_levels": _list_levels,
+    "run_level": _run_level,
+    "shutdown": _shutdown,
+}
 
 
 def handle_line(line: str) -> tuple[dict[str, Any], bool]:
@@ -46,6 +89,8 @@ def handle_line(line: str) -> tuple[dict[str, Any], bool]:
         return protocol.error(request_id, "unknown_method", f"Không có phép '{method}'"), True
     try:
         payload = handler(params)
+    except ProtocolError as exc:
+        return protocol.error(request_id, exc.code, exc.message), True
     except Exception:
         log.exception("handler %s lỗi", method)
         message = f"Kernel gặp lỗi nội bộ khi xử lý '{method}'"

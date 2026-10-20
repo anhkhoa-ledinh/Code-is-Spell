@@ -6,6 +6,7 @@ Chỉ dùng thư viện chuẩn; tiến trình con gọi bằng list args, khôn
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import subprocess
 import sys
@@ -82,8 +83,62 @@ def cmd_kernel(_: argparse.Namespace) -> int:
     return run([PY, "-u", "-m", "ma_thuat"])
 
 
+def ask_kernel(method: str, params: dict[str, object]) -> dict[str, object]:
+    """Chạy kernel thật, gửi một request rồi shutdown; trả response mang id của request."""
+    requests = [
+        {"id": 1, "method": method, "params": params},
+        {"id": 2, "method": "shutdown", "params": {}},
+    ]
+    stdin = "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in requests)
+    proc = subprocess.run(
+        [PY, "-u", "-m", "ma_thuat"],
+        input=stdin.encode("utf-8"),
+        capture_output=True,
+        cwd=REPO,
+        check=False,
+        timeout=120,
+    )
+    for line in proc.stdout.decode("utf-8").splitlines():
+        message = json.loads(line)
+        if message.get("id") == 1:
+            return message
+    stderr = proc.stderr.decode("utf-8", "replace")
+    raise RuntimeError(f"kernel không trả lời (mã {proc.returncode}):\n{stderr}")
+
+
+def format_run_result(result: dict) -> str:
+    stars = result["stars"]
+    stars_text = "★" * stars + "☆" * (3 - stars)
+    lines = [f"Trạng thái: {result['status']} · seed {result['seed']} · {stars_text}"]
+    for check in result["checks"]:
+        mark = "✓" if check["passed"] else "✗"
+        lines.append(f"  {mark} {check['id']}: {check['message']}")
+    mana = result["mana"]
+    by_school = ", ".join(f"{school} {amount}" for school, amount in mana["by_school"].items())
+    lines.append(f"Mana: {mana['total']} ({by_school or 'không'})")
+    metrics = result["metrics"]
+    lines.append(
+        f"Tick: {metrics['ticks']} · dòng: {metrics['lines']} · event: {len(result['events'])}"
+    )
+    return "\n".join(lines)
+
+
 def cmd_run_level(args: argparse.Namespace) -> int:
-    print("run-level: chưa có (MT-012)")
+    try:
+        code = Path(args.spell).read_text(encoding="utf-8")
+    except OSError as exc:
+        print(f"Lỗi: không đọc được {args.spell}: {exc}")
+        return 1
+    try:
+        response = ask_kernel("run_level", {"level_id": args.level_id, "code": code})
+    except RuntimeError as exc:
+        print(f"Lỗi: {exc}")
+        return 1
+    if "error" in response:
+        error = response["error"]
+        print(f"Lỗi {error['code']}: {error['message']}")
+        return 1
+    print(format_run_result(response["result"]))
     return 0
 
 

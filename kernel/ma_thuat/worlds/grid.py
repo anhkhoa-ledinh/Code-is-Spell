@@ -59,6 +59,14 @@ class GridWorld:
             "lanterns": [list(pos) for pos in sorted(self.lanterns, key=lambda p: (p[1], p[0]))],
         }
 
+    def mana(self) -> dict[str, int]:
+        """Mana của các hành động (chưa gồm tick), theo trường phái."""
+        return {SCHOOL: self.action_mana}
+
+    def metrics(self) -> dict[str, int]:
+        """Metric lượng tử của run_result; thế giới lưới không chạy mạch."""
+        return {"shots": 0, "executions": 0, "depth": 0, "gates": 0}
+
     def api(self, run: SpellRun) -> dict[str, Any]:
         """Các tên người chơi gọi được trong câu chú."""
         self._run = run
