@@ -1,0 +1,62 @@
+name: ci
+on: [push, pull_request]
+
+# Windows là nền tảng chính và phải xanh. Ubuntu chạy để thấy sớm lỗi Linux nhưng không làm
+# CI đỏ (continue-on-error) cho tới khi làm phần hỗ trợ Linux.
+
+jobs:
+  kernel:
+    name: kernel (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.os != 'windows-latest' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install uv
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest
+
+  godot:
+    name: godot (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.os != 'windows-latest' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install uv
+      - run: uv sync --locked
+      - uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.2
+          use-dotnet: false
+      # Trên Windows, alias $GODOT của action là hard link không có đuôi .exe và trỏ vào bản GUI:
+      # dùng bản _console.exe nằm cạnh nó (thấy output test, Windows chạy được qua subprocess).
+      - name: Đặt GODOT_BIN
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            bin=$(find "$HOME/godot" -name "*_win64_console.exe" | head -n 1)
+            bin=$(cygpath -w "$bin")
+          else
+            bin="$GODOT"
+          fi
+          "$bin" --version
+          echo "GODOT_BIN=$bin" >> "$GITHUB_ENV"
+      # dev.py test-godot tự chạy --import trước GUT.
+      - run: uv run python scripts/dev.py test-godot
+      # Thêm ở MT-018:
+      # - run: uv run python scripts/dev.py smoke
