@@ -2,6 +2,11 @@
 
 MANA_PER_TICK = 1
 
+# Chi phí hành động của thế giới lưới (LEVEL-SPEC §3). Truy vấn (is_lantern, get_pos,
+# world_size) miễn phí.
+MOVE_MANA = 1
+LIGHT_MANA = 1
+
 
 def tick_mana(ticks: int) -> int:
     """Mana Xà Ngữ cho phần dòng code đã chạy (chưa gồm chi phí hành động của world)."""
