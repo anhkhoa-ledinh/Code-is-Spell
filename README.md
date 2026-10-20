@@ -1,53 +1,44 @@
-# Mã Thuật
+## Ý Tưởng
 
-> **Code là ma thuật, dev là pháp sư.**
+> **Sẽ ra sao nếu ta xem những đoạn code là thần chú , và việc code là đang cast phép ?**
 
-Game lập trình lấy cảm hứng từ *The Farmer Was Replaced*: người chơi niệm phép bằng Python thật, rồi tiến lên đại số tuyến tính, PennyLane và quantum machine learning trong Học viện Mã Thuật. Client làm bằng Godot 4; luật chơi chạy trong một kernel Python riêng.
+Đó chính là ý tưởng cho tựa Game lập trình này, game được lấy cảm hứng từ *The Farmer Was Replaced*: người chơi niệm phép bằng Python thật, rồi sau đó mở rộng ra đại số tuyến tính, PennyLane và quantum machine learning trong Học viện Ma Thuật. Client làm bằng Godot; mọi luật chơi chạy trong một kernel Python riêng, Godot chỉ hiển thị và phát lại kết quả.
 
 ## Trạng thái
 
-Giai đoạn khởi động: repo mới có tài liệu và cấu hình cho Claude Code. Code bắt đầu từ task MT-001. Cách bắt đầu: xem `KICKOFF.md`.
+Đang ở giai đoạn nền móng (M0): đã có khung repo, lệnh phát triển, kernel nói giao thức qua stdio, hợp đồng giao thức ở hai phía, CI, và hai spike gỡ rủi ro (đường pipe Godot <-> Python, API PennyLane). Chưa có màn chơi.
 
-## Bộ khởi động gồm gì
+Nền tảng: **Windows** trước. Linux là phần mở rộng làm sau; CI có job ubuntu nhưng không bắt buộc xanh.
 
-| File | Ai đọc | Nội dung |
-|---|---|---|
-| `CLAUDE.md` | Claude Code (tự nạp mỗi phiên) | stack, lệnh, bất biến kiến trúc, quy trình, Definition of Done |
-| `KICKOFF.md` | bạn | cài đặt, prompt cho từng giai đoạn, cách xử lý khi Claude đi lệch |
-| `docs/01-GDD.md` | cả hai | tầm nhìn, trụ cột, thế giới, bảng màu trường phái, phạm vi MVP |
-| `docs/02-ARCHITECTURE.md` | cả hai | thành phần, luồng niệm phép, giao thức, sandbox, mana, rủi ro |
-| `docs/03-LEVEL-SPEC.md` | cả hai | 6 tầng MVP: thế giới, check, lời giải mẫu, lời giải sai |
-| `docs/04-BACKLOG.md` | cả hai | 23 task MT-xxx theo milestone M0–M3, mỗi task có tiêu chí chấp nhận |
-| `docs/05-QUALITY.md` | cả hai | các tầng test, DoD, quy ước git, CI nháp, checklist chơi thử |
-| `docs/adr/` | cả hai | 6 quyết định kiến trúc và lý do |
-| `contracts/` | Claude Code | JSON Schema giao thức Godot ↔ kernel và 10 message mẫu đã kiểm hợp lệ |
-| `.claude/settings.json` | Claude Code | cho chạy test, lint, commit không cần hỏi; cấm push |
-| `.claude/rules/` | Claude Code | quy tắc riêng cho kernel, Godot, màn chơi; chỉ nạp khi đụng file liên quan |
-| `.claude/skills/` | Claude Code | `/task MT-xxx`, `verify` (tự chạy trước mỗi commit), `/new-level` |
-| `.claude/agents/reviewer.md` | Claude Code | subagent rà soát chỉ đọc |
+## Công nghệ
 
-## Đã chốt (muốn đổi thì viết ADR mới)
+- Godot 4.7.2 + GDScript có kiểu tĩnh, test bằng GUT 9.7.0.
+- Python 3.12 quản lý bằng uv; PennyLane 0.45.x (`import pennylane as qp`); pytest, ruff.
+- Kernel là process Python riêng, trao đổi JSON Lines (UTF-8) qua stdin/stdout với Godot.
+- Kernel chạy và chấm trọn câu chú trước, Godot phát lại dòng thời gian sự kiện sau.
 
-- Godot 4.7.2 + GDScript, test bằng GUT 9.7.0.
-- Python 3.12 + uv, PennyLane 0.45.x (`import pennylane as qp`), pytest, ruff.
-- Kernel là process riêng, JSON Lines qua stdio (spike MT-003 xác nhận).
-- Kernel mô phỏng trước, Godot phát lại sau.
-- MVP: 3 tầng Xà Ngữ + 3 tầng Lượng Tử, desktop Windows và Linux.
+## Cấu trúc
 
-## Giả định (sửa nếu sai)
+| Thư mục | Nội dung |
+|---|---|
+| `kernel/ma_thuat/` | kernel Python (`python -m ma_thuat`): vòng lặp giao thức |
+| `kernel/tests/` | pytest: giao thức, hợp đồng, lệnh dev, spike |
+| `kernel/spikes/` | script thử nghiệm: echo kernel giả, kiểm API PennyLane |
+| `game/` | project Godot; `scripts/protocol.gd`, `tests/unit/`, `spikes/` |
+| `game/addons/gut/` | GUT 9.7.0 (bên thứ ba, không sửa) |
+| `contracts/` | JSON Schema của giao thức và 10 message mẫu, dùng chung cho cả hai phía |
+| `scripts/dev.py` | mọi lệnh phát triển (chỉ dùng thư viện chuẩn) |
+| `.github/workflows/ci.yml` | CI: ruff, pytest, GUT |
 
-- Một người làm cùng Claude Code; máy dev chạy Windows hoặc Linux.
-- Chưa phát hành, chưa có tính năng online.
-- Không có hạn chót cứng: milestone xong khi checklist chơi thử đạt.
-
-## Phát triển
+## Phát triển (Windows)
 
 1. Cài [uv](https://docs.astral.sh/uv/). uv tự tải Python 3.12 nếu máy chưa có.
-2. Cài Godot **4.7.2** stable bản thường (không .NET). GUT 9.7.0 đã nằm sẵn trong `game/addons/gut/`.
-3. Đặt biến môi trường `GODOT_BIN` trỏ tới file chạy Godot, rồi mở lại terminal hoặc editor:
-   - Windows (PowerShell), dùng bản `_console.exe` để thấy output test:
-     `[Environment]::SetEnvironmentVariable("GODOT_BIN", "C:\Tools\Godot\Godot_v4.7.2-stable_win64_console.exe", "User")`
-   - Linux: thêm `export GODOT_BIN="$HOME/tools/Godot_v4.7.2-stable_linux.x86_64"` vào `~/.bashrc`.
+2. Cài Godot **4.7.2** stable bản thường (không .NET). GUT đã nằm sẵn trong `game/addons/gut/`.
+3. Đặt biến môi trường `GODOT_BIN` trỏ tới bản `_console.exe` (để thấy output test), rồi mở lại terminal hoặc editor. Ví dụ trong PowerShell:
+   ```
+   [Environment]::SetEnvironmentVariable("GODOT_BIN", "C:\Tools\Godot\Godot_v4.7.2-stable_win64_console.exe", "User")
+   ```
+   Giữ file `_console.exe` cạnh file `.exe` cùng tên: bản console chỉ là wrapper gọi sang nó.
 4. Ở gốc repo:
    ```
    uv sync
@@ -55,4 +46,24 @@ Giai đoạn khởi động: repo mới có tài liệu và cấu hình cho Clau
    ```
    `check` chạy ruff, pytest và test Godot (GUT headless). Thiếu `GODOT_BIN` thì phần Godot bị bỏ qua kèm cảnh báo.
 
-Các lệnh khác: `uv run python scripts/dev.py --help`.
+## Lệnh
+
+| Lệnh (`uv run python scripts/dev.py ...`) | Việc |
+|---|---|
+| `check` | cổng chất lượng: ruff check, ruff format --check, pytest, test Godot |
+| `test-godot` | chỉ test Godot (cần `GODOT_BIN`) |
+| `kernel` | chạy kernel để debug tay: gõ từng dòng JSON vào stdin, ví dụ `{"id": 1, "method": "ping", "params": {}}` |
+| `smoke`, `run-level` | chưa có |
+
+Chạy lại các spike:
+
+```
+uv run python kernel/spikes/pennylane_api.py
+& $env:GODOT_BIN --path game --disable-vsync res://spikes/pipe_spike.tscn -- --mode=ping
+```
+
+Chế độ của spike pipe: `ping`, `burst`, `die`, `kill`, `no-drain`.
+
+## Lưu ý
+
+Sandbox chạy code người chơi là lồng **luật chơi**, không phải lồng bảo mật: Vì thế chỉ chạy code bạn tin tưởng trên máy của bạn!!!
