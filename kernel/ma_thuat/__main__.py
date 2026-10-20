@@ -14,6 +14,7 @@ def main() -> int:
     )
     import pennylane as qp
 
+    server.load()
     protocol.send(protocol.ready(qp.__version__))
     return server.serve(sys.stdin, protocol.send)
 

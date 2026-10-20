@@ -1,9 +1,12 @@
+import dataclasses
 import json
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
+import fake_level
 import pytest
 from jsonschema import Draft202012Validator
 
@@ -104,6 +107,73 @@ def test_serve_returns_zero_on_eof() -> None:
     assert server.serve([], lambda message: None) == 0
 
 
+# --- list_levels / run_level (registry thay bằng màn giả lập) ---
+
+
+@pytest.fixture
+def fake_registry(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(server, "LEVELS", {fake_level.LEVEL.id: fake_level})
+
+
+def call(request_id: int, method: str, params: dict[str, Any]) -> dict[str, Any]:
+    line = json.dumps({"id": request_id, "method": method, "params": params}, ensure_ascii=False)
+    response, keep_running = server.handle_line(line)
+    assert keep_running
+    assert_valid(response)
+    return response
+
+
+def test_list_levels_returns_valid_metadata(fake_registry: None) -> None:
+    levels = call(1, "list_levels", {})["result"]["levels"]
+    assert [level["id"] for level in levels] == ["xa_ngu/t0_thu"]
+    meta = levels[0]
+    assert meta["features"] == ["conditionals", "loops"]
+    assert meta["preview"] == fake_level.make_world(0).snapshot()
+    assert meta["stars"] == {"metric": "mana", "three": 16, "two": 24}
+
+
+def test_list_levels_sorts_by_tower_then_order(monkeypatch: pytest.MonkeyPatch) -> None:
+    def variant(level_id: str, tower: str, order: int) -> SimpleNamespace:
+        level = dataclasses.replace(fake_level.LEVEL, id=level_id, tower=tower, order=order)
+        return SimpleNamespace(LEVEL=level)
+
+    modules = {
+        "luong_tu/q1": variant("luong_tu/q1", "luong_tu", 1),
+        "xa_ngu/f2": variant("xa_ngu/f2", "xa_ngu", 2),
+        "xa_ngu/f1": variant("xa_ngu/f1", "xa_ngu", 1),
+    }
+    monkeypatch.setattr(server, "LEVELS", modules)
+    levels = call(1, "list_levels", {})["result"]["levels"]
+    assert [level["id"] for level in levels] == ["xa_ngu/f1", "xa_ngu/f2", "luong_tu/q1"]
+
+
+def test_run_level_returns_run_result(fake_registry: None) -> None:
+    params = {"level_id": "xa_ngu/t0_thu", "code": fake_level.REFERENCE}
+    result = call(2, "run_level", params)["result"]
+    assert result["status"] == "passed" and result["stars"] == 3
+
+
+def test_unknown_level_matches_fixture_wording(fake_registry: None) -> None:
+    error = call(7, "run_level", {"level_id": "xa_ngu/f9", "code": ""})["error"]
+    fixture = json.loads((REPO / "contracts/fixtures/response_error.json").read_text("utf-8"))
+    assert error == fixture["error"]
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        {"code": "move(EAST)\n"},
+        {"level_id": "xa_ngu/t0_thu"},
+        {"level_id": "xa_ngu/t0_thu", "code": 3},
+        {"level_id": 1, "code": ""},
+        {"level_id": "xa_ngu/t0_thu", "code": "x" * 20_001},
+    ],
+)
+def test_run_level_bad_params(fake_registry: None, params: dict[str, Any]) -> None:
+    error = call(3, "run_level", params)["error"]
+    assert error["code"] == "bad_params"
+
+
 # --- kernel thật qua subprocess ---
 
 
@@ -137,6 +207,13 @@ def test_kernel_ready_ping_shutdown() -> None:
     assert messages[0]["params"]["protocol"] == 1
     assert messages[0]["params"]["pennylane"].startswith("0.45.")
     assert messages[1:] == [{"id": 1, "result": {"pong": True}}, {"id": 2, "result": {"ok": True}}]
+
+
+def test_kernel_answers_list_levels() -> None:
+    result = run_kernel([request(1, "list_levels"), request(2, "shutdown")])
+    assert result.returncode == 0
+    _, levels, _ = protocol_lines(result)
+    assert levels["id"] == 1 and "levels" in levels["result"]
 
 
 def test_kernel_sends_exactly_one_ready_then_exits_zero_on_eof() -> None:

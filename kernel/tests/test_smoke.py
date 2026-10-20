@@ -1,6 +1,7 @@
 import argparse
 import ast
 import importlib.util
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -37,19 +38,40 @@ def test_ma_thuat_imports_from_any_directory(tmp_path: Path) -> None:
     assert Path(result.stdout.strip()).parent == REPO / "kernel" / "ma_thuat"
 
 
-@pytest.mark.parametrize(
-    ("argv", "message"),
-    [
-        (["smoke"], "chưa có (MT-018)"),
-        (["run-level", "xa_ngu/f1", "spell.py"], "chưa có (MT-012)"),
-    ],
-)
-def test_placeholder_commands_print_and_succeed(
-    dev: ModuleType, capsys: pytest.CaptureFixture[str], argv: list[str], message: str
-) -> None:
-    args = dev.build_parser().parse_args(argv)
+def test_smoke_is_still_a_placeholder(dev: ModuleType, capsys: pytest.CaptureFixture[str]) -> None:
+    args = dev.build_parser().parse_args(["smoke"])
     assert args.func(args) == 0
-    assert message in capsys.readouterr().out
+    assert "chưa có (MT-018)" in capsys.readouterr().out
+
+
+def test_format_run_result_on_passed_fixture(dev: ModuleType) -> None:
+    fixture = REPO / "contracts" / "fixtures" / "response_run_level_passed.json"
+    result = json.loads(fixture.read_text(encoding="utf-8"))["result"]
+    assert dev.format_run_result(result) == (
+        "Trạng thái: passed · seed 0 · ★★★\n"
+        "  ✓ all_lit: Đã thắp 3/3 đèn\n"
+        "  ✓ no_backfire: Không có phản phệ\n"
+        "Mana: 12 (xa_ngu 12)\n"
+        "Tick: 6 · dòng: 6 · event: 6"
+    )
+
+
+def test_run_level_reports_unknown_level_through_real_kernel(
+    dev: ModuleType, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    spell = tmp_path / "spell.py"
+    spell.write_text("move(EAST)\n", encoding="utf-8")
+    args = dev.build_parser().parse_args(["run-level", "xa_ngu/khong_co", str(spell)])
+    assert args.func(args) == 1
+    assert "Lỗi unknown_level: Không có tầng 'xa_ngu/khong_co'" in capsys.readouterr().out
+
+
+def test_run_level_reports_missing_file(
+    dev: ModuleType, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    args = dev.build_parser().parse_args(["run-level", "xa_ngu/f1", str(tmp_path / "khong.py")])
+    assert args.func(args) == 1
+    assert "không đọc được" in capsys.readouterr().out
 
 
 def test_kernel_without_main_prints_placeholder(
